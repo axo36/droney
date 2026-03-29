@@ -1,0 +1,1355 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>L'Œuf d'Or — Chocolaterie Artisanale</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Mono:wght@300;400;500&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+
+<!-- Supabase CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+  :root {
+    --gold: #C9922A;
+    --gold-light: #E8B84B;
+    --gold-pale: #F5E6C8;
+    --brown-dark: #1A0F00;
+    --brown-mid: #3D1F00;
+    --brown-warm: #6B3A1A;
+    --cream: #FDF6E9;
+    --cream-dark: #F0E6CC;
+    --white: #FFFDF8;
+    --drone-blue: #1A3A5C;
+    --success: #2D6A4F;
+    --admin-dark: #0D1117;
+    --admin-accent: #58A6FF;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Cormorant Garamond', serif;
+    background: var(--brown-dark);
+    color: var(--cream);
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+
+  /* ─── NOISE TEXTURE OVERLAY ─── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.3;
+  }
+
+  /* ─── VIEWS ─── */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ─── HERO ─── */
+  #view-shop {
+    min-height: 100vh;
+    background: radial-gradient(ellipse at 50% 0%, #3D1F00 0%, #1A0F00 60%);
+    position: relative;
+  }
+
+  .hero-header {
+    text-align: center;
+    padding: 80px 20px 40px;
+    position: relative;
+  }
+
+  .gold-line {
+    width: 60px;
+    height: 1px;
+    background: var(--gold);
+    margin: 0 auto 24px;
+  }
+
+  .eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  .hero-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(56px, 10vw, 120px);
+    font-weight: 900;
+    line-height: 0.9;
+    color: var(--gold-light);
+    text-shadow: 0 0 80px rgba(201, 146, 42, 0.3);
+    margin-bottom: 12px;
+    animation: fadeInUp 1s ease both;
+  }
+
+  .hero-subtitle {
+    font-size: clamp(18px, 3vw, 28px);
+    font-style: italic;
+    color: var(--cream-dark);
+    opacity: 0.8;
+    animation: fadeInUp 1s 0.2s ease both;
+  }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ─── EGG PRODUCT CARD ─── */
+  .product-section {
+    max-width: 700px;
+    margin: 60px auto;
+    padding: 0 24px;
+    animation: fadeInUp 1s 0.4s ease both;
+    opacity: 0;
+    animation-fill-mode: forwards;
+  }
+
+  .product-card {
+    background: linear-gradient(135deg, #2A1500 0%, #1A0F00 50%, #2A1800 100%);
+    border: 1px solid rgba(201, 146, 42, 0.3);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .product-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% -20%, rgba(201,146,42,0.12) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .egg-visual {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px 40px;
+    position: relative;
+  }
+
+  .egg-glow {
+    position: absolute;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(201,146,42,0.25) 0%, transparent 70%);
+    border-radius: 50%;
+    animation: pulse 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.6; }
+    50% { transform: scale(1.15); opacity: 1; }
+  }
+
+  .egg-svg {
+    position: relative;
+    z-index: 2;
+    filter: drop-shadow(0 10px 40px rgba(201,146,42,0.4));
+    animation: float 4s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-12px); }
+  }
+
+  .product-info {
+    padding: 0 40px 50px;
+    text-align: center;
+    position: relative;
+    z-index: 2;
+  }
+
+  .product-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 42px;
+    font-weight: 700;
+    color: var(--gold-light);
+    margin-bottom: 8px;
+  }
+
+  .product-desc {
+    font-size: 18px;
+    font-style: italic;
+    color: var(--cream-dark);
+    opacity: 0.75;
+    margin-bottom: 24px;
+    line-height: 1.6;
+  }
+
+  .badge-wrapper {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+  }
+
+  .badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border: 1px solid rgba(201,146,42,0.4);
+    color: var(--gold);
+    border-radius: 2px;
+  }
+
+  .price-block {
+    margin-bottom: 36px;
+  }
+
+  .price-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .price-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 72px;
+    font-weight: 900;
+    color: var(--white);
+    line-height: 1;
+  }
+
+  .price-note {
+    font-size: 14px;
+    color: var(--cream-dark);
+    opacity: 0.6;
+    margin-top: 6px;
+    font-style: italic;
+  }
+
+  .btn-buy {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 50%, var(--gold) 100%);
+    background-size: 200% auto;
+    color: var(--brown-dark);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    font-weight: 500;
+    padding: 18px 52px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.4s ease;
+    border-radius: 2px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-buy::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.3) 50%, transparent 60%);
+    transform: translateX(-100%);
+    transition: transform 0.6s ease;
+  }
+
+  .btn-buy:hover {
+    background-position: right center;
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(201,146,42,0.4);
+  }
+
+  .btn-buy:hover::after { transform: translateX(100%); }
+
+  .no-card-note {
+    margin-top: 16px;
+    font-size: 13px;
+    color: var(--gold);
+    opacity: 0.7;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.1em;
+  }
+
+  /* ─── ADMIN TOGGLE ─── */
+  .admin-toggle {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 1000;
+    background: rgba(13,17,23,0.8);
+    border: 1px solid rgba(88,166,255,0.3);
+    color: var(--admin-accent);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 10px 18px;
+    cursor: pointer;
+    border-radius: 2px;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+  }
+
+  .admin-toggle:hover {
+    background: rgba(88,166,255,0.15);
+    border-color: var(--admin-accent);
+    box-shadow: 0 0 20px rgba(88,166,255,0.2);
+  }
+
+  /* ─── CONFIRMATION / DELIVERY VIEW ─── */
+  #view-delivery {
+    min-height: 100vh;
+    background: radial-gradient(ellipse at 50% 0%, #0A1628 0%, #050C18 60%);
+    padding: 60px 20px;
+  }
+
+  .delivery-container {
+    max-width: 680px;
+    margin: 0 auto;
+  }
+
+  .delivery-header {
+    text-align: center;
+    margin-bottom: 60px;
+  }
+
+  .delivery-header .eyebrow { color: #4ECDC4; }
+
+  .delivery-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(36px, 7vw, 64px);
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 12px;
+  }
+
+  .delivery-subtitle {
+    font-size: 18px;
+    font-style: italic;
+    color: rgba(255,255,255,0.6);
+  }
+
+  /* ─── DRONE ANIMATION ─── */
+  .drone-scene {
+    position: relative;
+    height: 160px;
+    margin: 40px 0;
+    overflow: hidden;
+    border-radius: 8px;
+    background: linear-gradient(180deg, #050C18 0%, #0A1628 100%);
+    border: 1px solid rgba(78,205,196,0.2);
+  }
+
+  .drone-path {
+    position: absolute;
+    top: 50%;
+    left: -80px;
+    animation: flyDrone 3s ease-in-out infinite;
+  }
+
+  .drone-body {
+    font-size: 48px;
+    filter: drop-shadow(0 0 15px rgba(78,205,196,0.6));
+  }
+
+  .drone-trail {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(78,205,196,0.4), transparent);
+    transform: translateY(-50%);
+  }
+
+  .stars {
+    position: absolute;
+    inset: 0;
+  }
+
+  .star {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: white;
+    border-radius: 50%;
+    animation: twinkle 2s ease-in-out infinite;
+  }
+
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+  }
+
+  @keyframes flyDrone {
+    0% { left: -80px; top: 60%; }
+    50% { left: 50%; top: 40%; transform: translateX(-50%); }
+    100% { left: calc(100% + 80px); top: 50%; }
+  }
+
+  /* ─── DELIVERY STEPS ─── */
+  .steps-container { margin-top: 40px; }
+
+  .step {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    padding: 24px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    position: relative;
+    transition: all 0.5s ease;
+  }
+
+  .step:last-child { border-bottom: none; }
+
+  .step-number {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: rgba(255,255,255,0.3);
+    letter-spacing: 0.2em;
+    min-width: 28px;
+    margin-top: 4px;
+  }
+
+  .step-icon {
+    font-size: 28px;
+    min-width: 40px;
+    text-align: center;
+    filter: grayscale(1);
+    opacity: 0.4;
+    transition: all 0.5s ease;
+  }
+
+  .step-content { flex: 1; }
+
+  .step-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    margin-bottom: 4px;
+    transition: color 0.5s ease;
+  }
+
+  .step-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 4px;
+    transition: color 0.5s ease;
+  }
+
+  .step-desc {
+    font-size: 14px;
+    color: rgba(255,255,255,0.35);
+    font-style: italic;
+    transition: color 0.5s ease;
+  }
+
+  .step-status {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 2px;
+    border: 1px solid rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.3);
+    white-space: nowrap;
+    align-self: center;
+    transition: all 0.5s ease;
+  }
+
+  /* Step states */
+  .step.done .step-icon { filter: none; opacity: 1; }
+  .step.done .step-label { color: #4ECDC4; }
+  .step.done .step-title { color: var(--white); }
+  .step.done .step-desc { color: rgba(255,255,255,0.6); }
+  .step.done .step-status {
+    background: rgba(78,205,196,0.15);
+    border-color: rgba(78,205,196,0.4);
+    color: #4ECDC4;
+  }
+
+  .step.active .step-icon { filter: none; opacity: 1; animation: stepPulse 1.5s ease-in-out infinite; }
+  .step.active .step-label { color: var(--gold); }
+  .step.active .step-title { color: var(--gold-light); }
+  .step.active .step-desc { color: rgba(232,184,75,0.7); }
+  .step.active .step-status {
+    background: rgba(201,146,42,0.15);
+    border-color: rgba(201,146,42,0.5);
+    color: var(--gold-light);
+    animation: blinkStatus 1.5s ease-in-out infinite;
+  }
+
+  @keyframes stepPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+  }
+
+  @keyframes blinkStatus {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .btn-back {
+    display: inline-block;
+    margin-top: 48px;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.6);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    padding: 14px 32px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.3s ease;
+  }
+
+  .btn-back:hover {
+    border-color: rgba(255,255,255,0.5);
+    color: white;
+  }
+
+  /* ─── ADMIN PANEL ─── */
+  #view-admin {
+    min-height: 100vh;
+    background: var(--admin-dark);
+    font-family: 'DM Mono', monospace;
+    padding: 40px 20px;
+    color: rgba(255,255,255,0.85);
+  }
+
+  .admin-header {
+    max-width: 900px;
+    margin: 0 auto 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 24px;
+    border-bottom: 1px solid rgba(88,166,255,0.2);
+  }
+
+  .admin-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .admin-dot {
+    width: 10px;
+    height: 10px;
+    background: #2ECC71;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #2ECC71;
+    animation: blink 2s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .admin-title {
+    font-size: 14px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--admin-accent);
+  }
+
+  .admin-subtitle {
+    font-size: 10px;
+    color: rgba(255,255,255,0.3);
+    letter-spacing: 0.2em;
+  }
+
+  .admin-back-btn {
+    background: transparent;
+    border: 1px solid rgba(88,166,255,0.3);
+    color: var(--admin-accent);
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 8px 16px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.3s ease;
+  }
+
+  .admin-back-btn:hover {
+    background: rgba(88,166,255,0.1);
+  }
+
+  .admin-content {
+    max-width: 900px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  @media (max-width: 640px) { .admin-content { grid-template-columns: 1fr; } }
+
+  .admin-card {
+    background: #161B22;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 4px;
+    padding: 28px;
+  }
+
+  .admin-card.full-width { grid-column: 1 / -1; }
+
+  .admin-card-title {
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--admin-accent);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .admin-card-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(88,166,255,0.2);
+  }
+
+  /* ─── ORDERS TABLE ─── */
+  .orders-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  .orders-table th {
+    text-align: left;
+    padding: 8px 12px;
+    color: rgba(255,255,255,0.4);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .orders-table td {
+    padding: 12px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: rgba(255,255,255,0.75);
+    vertical-align: middle;
+  }
+
+  .orders-table tr:hover td { background: rgba(255,255,255,0.03); }
+
+  .order-id {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: rgba(255,255,255,0.35);
+  }
+
+  .step-selector {
+    background: #0D1117;
+    border: 1px solid rgba(255,255,255,0.15);
+    color: rgba(255,255,255,0.85);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    padding: 6px 10px;
+    border-radius: 2px;
+    cursor: pointer;
+    width: 100%;
+  }
+
+  .step-selector:focus { outline: none; border-color: var(--admin-accent); }
+
+  .save-btn {
+    background: rgba(88,166,255,0.15);
+    border: 1px solid rgba(88,166,255,0.4);
+    color: var(--admin-accent);
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+  }
+
+  .save-btn:hover { background: rgba(88,166,255,0.3); }
+
+  /* ─── STATS ─── */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  .stat-box {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 3px;
+    padding: 16px;
+    text-align: center;
+  }
+
+  .stat-value {
+    font-size: 32px;
+    font-weight: 500;
+    color: var(--admin-accent);
+    margin-bottom: 4px;
+  }
+
+  .stat-label {
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+  }
+
+  /* ─── SUPABASE STATUS ─── */
+  .supabase-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-size: 12px;
+  }
+
+  .supabase-row:last-child { border-bottom: none; }
+
+  .sb-label { color: rgba(255,255,255,0.4); font-size: 10px; letter-spacing: 0.15em; }
+
+  .sb-value { color: rgba(255,255,255,0.8); }
+
+  .sb-pill {
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 20px;
+    border: 1px solid;
+  }
+
+  .sb-pill.connected { background: rgba(46,204,113,0.1); border-color: rgba(46,204,113,0.4); color: #2ECC71; }
+  .sb-pill.disconnected { background: rgba(231,76,60,0.1); border-color: rgba(231,76,60,0.4); color: #E74C3C; }
+
+  /* ─── STEP BADGE ─── */
+  .step-badge {
+    display: inline-block;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 2px;
+  }
+
+  .step-badge.step-0 { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.4); border: 1px solid rgba(255,255,255,0.1); }
+  .step-badge.step-1 { background: rgba(232,184,75,0.1); color: var(--gold-light); border: 1px solid rgba(232,184,75,0.3); }
+  .step-badge.step-2 { background: rgba(88,166,255,0.1); color: #58A6FF; border: 1px solid rgba(88,166,255,0.3); }
+  .step-badge.step-3 { background: rgba(78,205,196,0.1); color: #4ECDC4; border: 1px solid rgba(78,205,196,0.3); }
+  .step-badge.step-4 { background: rgba(46,204,113,0.1); color: #2ECC71; border: 1px solid rgba(46,204,113,0.3); }
+  .step-badge.step-5 { background: rgba(155,89,182,0.1); color: #9B59B6; border: 1px solid rgba(155,89,182,0.3); }
+
+  /* ─── NOTIFICATION ─── */
+  .notif {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: #1A2433;
+    border: 1px solid rgba(78,205,196,0.4);
+    color: #4ECDC4;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    padding: 14px 28px;
+    border-radius: 3px;
+    z-index: 9000;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    white-space: nowrap;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+
+  .notif.show { transform: translateX(-50%) translateY(0); }
+
+  /* ─── ORDER SUCCESS ─── */
+  .order-success {
+    background: rgba(46,204,113,0.08);
+    border: 1px solid rgba(46,204,113,0.25);
+    border-radius: 4px;
+    padding: 20px 24px;
+    margin-bottom: 32px;
+    text-align: center;
+  }
+
+  .order-success-icon { font-size: 36px; margin-bottom: 8px; }
+
+  .order-success-text {
+    font-size: 14px;
+    color: #2ECC71;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.1em;
+  }
+
+  .order-id-display {
+    font-size: 12px;
+    color: rgba(255,255,255,0.4);
+    font-family: 'DM Mono', monospace;
+    margin-top: 4px;
+  }
+
+  /* ─── REAL-TIME PULSE ─── */
+  .realtime-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: #2ECC71;
+    letter-spacing: 0.15em;
+    margin-bottom: 16px;
+  }
+
+  .realtime-dot {
+    width: 7px;
+    height: 7px;
+    background: #2ECC71;
+    border-radius: 50%;
+    animation: blink 1.5s ease-in-out infinite;
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════ -->
+<!--  VIEW 1 — BOUTIQUE                         -->
+<!-- ═══════════════════════════════════════════ -->
+<div id="view-shop" class="view active">
+  <button class="admin-toggle" onclick="showAdmin()">⚙ Admin</button>
+
+  <div class="hero-header">
+    <div class="gold-line"></div>
+    <div class="eyebrow">Chocolaterie Artisanale · Depuis 2024</div>
+    <h1 class="hero-title">L'Œuf<br>d'Or</h1>
+    <p class="hero-subtitle">L'expérience chocolatée la plus exclusive du web</p>
+  </div>
+
+  <div class="product-section">
+    <div class="product-card">
+      <div class="egg-visual">
+        <div class="egg-glow"></div>
+        <svg class="egg-svg" width="160" height="200" viewBox="0 0 160 200" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="eggGrad" cx="38%" cy="35%" r="65%">
+              <stop offset="0%" stop-color="#F5E6C8"/>
+              <stop offset="30%" stop-color="#E8B84B"/>
+              <stop offset="65%" stop-color="#C9922A"/>
+              <stop offset="100%" stop-color="#6B3A1A"/>
+            </radialGradient>
+            <radialGradient id="shimmer" cx="30%" cy="25%" r="40%">
+              <stop offset="0%" stop-color="white" stop-opacity="0.5"/>
+              <stop offset="100%" stop-color="white" stop-opacity="0"/>
+            </radialGradient>
+            <filter id="softShadow">
+              <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#C9922A" flood-opacity="0.5"/>
+            </filter>
+          </defs>
+          <!-- Egg shape -->
+          <ellipse cx="80" cy="115" rx="65" ry="80" fill="url(#eggGrad)" filter="url(#softShadow)"/>
+          <!-- Shimmer -->
+          <ellipse cx="80" cy="115" rx="65" ry="80" fill="url(#shimmer)"/>
+          <!-- Decorative lines -->
+          <path d="M 45 70 Q 80 55 115 70" stroke="rgba(255,255,255,0.15)" stroke-width="1" fill="none"/>
+          <path d="M 35 100 Q 80 85 125 100" stroke="rgba(255,255,255,0.08)" stroke-width="1" fill="none"/>
+        </svg>
+      </div>
+
+      <div class="product-info">
+        <div class="product-name">Œuf en Chocolat</div>
+        <p class="product-desc">
+          Finement sculpté en chocolat noir grand cru 72%,<br>
+          garni de praliné aux noisettes du Piémont.
+        </p>
+
+        <div class="badge-wrapper">
+          <span class="badge">🍫 Grand Cru 72%</span>
+          <span class="badge">🌿 Bio & Éthique</span>
+          <span class="badge">✨ Édition Limitée</span>
+        </div>
+
+        <div class="price-block">
+          <div class="price-label">Prix de lancement</div>
+          <div class="price-value">0$</div>
+          <div class="price-note">Totalement gratuit · Aucune carte requise</div>
+        </div>
+
+        <button class="btn-buy" onclick="handleOrder()">
+          Commander maintenant
+        </button>
+        <div class="no-card-note">🔒 Aucune carte bancaire nécessaire</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════ -->
+<!--  VIEW 2 — LIVRAISON PAR DRONE              -->
+<!-- ═══════════════════════════════════════════ -->
+<div id="view-delivery" class="view">
+  <div class="delivery-container">
+
+    <div class="order-success">
+      <div class="order-success-icon">✅</div>
+      <div class="order-success-text">Commande confirmée !</div>
+      <div class="order-id-display" id="display-order-id">Commande #—</div>
+    </div>
+
+    <div class="delivery-header">
+      <div class="eyebrow">Suivi de livraison</div>
+      <h2 class="delivery-title">Livraison<br>par Drone</h2>
+      <p class="delivery-subtitle">Votre œuf est en route vers vous</p>
+    </div>
+
+    <!-- Drone animation -->
+    <div class="drone-scene">
+      <div class="stars" id="stars-container"></div>
+      <div class="drone-trail"></div>
+      <div class="drone-path">
+        <div class="drone-body">🚁</div>
+      </div>
+    </div>
+
+    <!-- Realtime indicator -->
+    <div class="realtime-indicator">
+      <div class="realtime-dot"></div>
+      SUIVI EN TEMPS RÉEL · SYNCHRONISÉ
+    </div>
+
+    <!-- Steps -->
+    <div class="steps-container" id="delivery-steps">
+      <!-- Populated by JS -->
+    </div>
+
+    <button class="btn-back" onclick="showShop()">← Retour à la boutique</button>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════ -->
+<!--  VIEW 3 — ADMIN PANEL                      -->
+<!-- ═══════════════════════════════════════════ -->
+<div id="view-admin" class="view">
+
+  <div class="admin-header">
+    <div>
+      <div class="admin-brand">
+        <div class="admin-dot"></div>
+        <div>
+          <div class="admin-title">Panneau Administrateur</div>
+          <div class="admin-subtitle">L'Œuf d'Or · Système de Gestion</div>
+        </div>
+      </div>
+    </div>
+    <button class="admin-back-btn" onclick="showShop()">← Boutique</button>
+  </div>
+
+  <div class="admin-content">
+
+    <!-- Stats -->
+    <div class="admin-card">
+      <div class="admin-card-title">Statistiques</div>
+      <div class="stat-grid">
+        <div class="stat-box">
+          <div class="stat-value" id="stat-total">—</div>
+          <div class="stat-label">Commandes</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value" id="stat-delivered">—</div>
+          <div class="stat-label">Livrées</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value" id="stat-transit">—</div>
+          <div class="stat-label">En route</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Supabase Status -->
+    <div class="admin-card">
+      <div class="admin-card-title">Infrastructure · Supabase</div>
+      <div class="supabase-row">
+        <span class="sb-label">Connexion DB</span>
+        <span class="sb-pill connected" id="sb-status">CONNECTÉ</span>
+      </div>
+      <div class="supabase-row">
+        <span class="sb-label">Realtime</span>
+        <span class="sb-pill connected">ACTIF</span>
+      </div>
+      <div class="supabase-row">
+        <span class="sb-label">Table</span>
+        <span class="sb-value">orders</span>
+      </div>
+      <div class="supabase-row">
+        <span class="sb-label">Région</span>
+        <span class="sb-value">eu-west-1</span>
+      </div>
+      <div class="supabase-row">
+        <span class="sb-label">Multi-appareils</span>
+        <span class="sb-pill connected">SYNC</span>
+      </div>
+    </div>
+
+    <!-- Orders Table -->
+    <div class="admin-card full-width">
+      <div class="admin-card-title">Commandes en cours</div>
+      <div style="overflow-x:auto;">
+        <table class="orders-table" id="admin-orders-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Produit</th>
+              <th>Heure</th>
+              <th>Étape actuelle</th>
+              <th>Modifier étape</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="orders-tbody">
+            <tr><td colspan="6" style="text-align:center;color:rgba(255,255,255,0.3);padding:32px;font-size:12px;">Chargement des commandes…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Notification -->
+<div class="notif" id="notif"></div>
+
+
+<script>
+// ═══════════════════════════════════════════
+//  CONFIGURATION SUPABASE
+//  → Remplacez ces valeurs par vos vraies clés Supabase
+// ═══════════════════════════════════════════
+const SUPABASE_URL = 'https://tjiqssgrxvxnjqhewtrt.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_IUb-C1nf11c98QajH_MTVw_8ZQGhMWp';
+
+// ═══════════════════════════════════════════
+//  ÉTAPES DE LIVRAISON
+// ═══════════════════════════════════════════
+const DELIVERY_STEPS = [
+  { id: 0, icon: '📦', label: 'Étape 1', title: 'Commande reçue', desc: 'Votre commande a été enregistrée avec succès.', status: 'Confirmé' },
+  { id: 1, icon: '🍫', label: 'Étape 2', title: 'Préparation en chocolaterie', desc: 'Nos artisans emballent délicatement votre œuf.', status: 'En préparation' },
+  { id: 2, icon: '🔋', label: 'Étape 3', title: 'Chargement du drone', desc: 'Le drone est chargé et prêt au décollage.', status: 'Chargement' },
+  { id: 3, icon: '🚁', label: 'Étape 4', title: 'Drone en vol', desc: 'Votre colis fend les airs à 120 km/h.', status: 'En transit' },
+  { id: 4, icon: '📡', label: 'Étape 5', title: 'Approche finale', desc: 'Le drone localise votre adresse précisément.', status: 'Approche' },
+  { id: 5, icon: '🎉', label: 'Étape 6', title: 'Livré !', desc: 'Votre œuf en chocolat est arrivé. Bon appétit !', status: 'Livré' },
+];
+
+// ═══════════════════════════════════════════
+//  ÉTAT LOCAL (simule la DB sans vraies clés)
+// ═══════════════════════════════════════════
+let orders = [];
+let currentOrderId = null;
+let supabaseClient = null;
+let supabaseConnected = false;
+
+// Tenter la connexion Supabase
+function initSupabase() {
+  try {
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    supabaseConnected = true;
+    return true;
+  } catch(e) {
+    supabaseConnected = false;
+    return false;
+  }
+}
+
+// ═══════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function showShop() { showView('view-shop'); }
+function showAdmin() {
+  showView('view-admin');
+  loadAdminOrders();
+}
+
+// ═══════════════════════════════════════════
+//  ÉTOILES (décoration drone)
+// ═══════════════════════════════════════════
+function createStars() {
+  const container = document.getElementById('stars-container');
+  for (let i = 0; i < 30; i++) {
+    const star = document.createElement('div');
+    star.className = 'star';
+    star.style.left = Math.random() * 100 + '%';
+    star.style.top = Math.random() * 100 + '%';
+    star.style.animationDelay = Math.random() * 2 + 's';
+    container.appendChild(star);
+  }
+}
+createStars();
+
+// ═══════════════════════════════════════════
+//  NOTIFICATION
+// ═══════════════════════════════════════════
+function showNotif(msg, duration = 3000) {
+  const el = document.getElementById('notif');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), duration);
+}
+
+// ═══════════════════════════════════════════
+//  COMMANDE
+// ═══════════════════════════════════════════
+async function handleOrder() {
+  const btn = document.querySelector('.btn-buy');
+  btn.textContent = 'Traitement…';
+  btn.disabled = true;
+
+  // Générer ID commande local
+  const orderId = 'OEF-' + Date.now().toString(36).toUpperCase();
+  const order = {
+    id: orderId,
+    product: 'Œuf en Chocolat',
+    created_at: new Date().toISOString(),
+    delivery_step: 0,
+  };
+
+  // Sauvegarder localement
+  orders.push(order);
+  currentOrderId = orderId;
+
+  // Tenter Supabase
+  if (supabaseConnected && supabaseClient) {
+    try {
+      const { data, error } = await supabaseClient.from('orders').insert([order]);
+      if (error) console.warn('Supabase insert:', error.message);
+    } catch(e) {}
+  }
+
+  await new Promise(r => setTimeout(r, 800));
+
+  btn.textContent = 'Commander maintenant';
+  btn.disabled = false;
+
+  // Afficher livraison
+  document.getElementById('display-order-id').textContent = 'Commande #' + orderId;
+  renderDeliverySteps(0);
+  showView('view-delivery');
+
+  // Si Supabase connecté, écouter les changements en temps réel
+  if (supabaseConnected && supabaseClient) {
+    subscribeToOrder(orderId);
+  }
+}
+
+// ═══════════════════════════════════════════
+//  AFFICHAGE DES ÉTAPES (côté client)
+// ═══════════════════════════════════════════
+function renderDeliverySteps(currentStep) {
+  const container = document.getElementById('delivery-steps');
+  container.innerHTML = '';
+
+  DELIVERY_STEPS.forEach((step, idx) => {
+    const div = document.createElement('div');
+    let state = '';
+    if (idx < currentStep) state = 'done';
+    else if (idx === currentStep) state = 'active';
+
+    div.className = 'step ' + state;
+    div.innerHTML = `
+      <div class="step-number">0${idx + 1}</div>
+      <div class="step-icon">${step.icon}</div>
+      <div class="step-content">
+        <div class="step-label">${step.label}</div>
+        <div class="step-title">${step.title}</div>
+        <div class="step-desc">${step.desc}</div>
+      </div>
+      <div class="step-status">${state === 'done' ? '✓ Fait' : state === 'active' ? step.status : 'En attente'}</div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+// ═══════════════════════════════════════════
+//  SUPABASE REALTIME SUBSCRIPTION
+// ═══════════════════════════════════════════
+function subscribeToOrder(orderId) {
+  if (!supabaseClient) return;
+  try {
+    supabaseClient
+      .channel('order-' + orderId)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'orders',
+        filter: `id=eq.${orderId}`
+      }, payload => {
+        const newStep = payload.new.delivery_step || 0;
+        renderDeliverySteps(newStep);
+        showNotif('📡 Mise à jour livraison : étape ' + (newStep + 1));
+
+        // Mettre à jour local
+        const o = orders.find(x => x.id === orderId);
+        if (o) o.delivery_step = newStep;
+      })
+      .subscribe();
+  } catch(e) {}
+}
+
+// ═══════════════════════════════════════════
+//  ADMIN — CHARGER COMMANDES
+// ═══════════════════════════════════════════
+async function loadAdminOrders() {
+  // Charger depuis Supabase si connecté
+  if (supabaseConnected && supabaseClient) {
+    try {
+      const { data, error } = await supabaseClient.from('orders').select('*').order('created_at', { ascending: false });
+      if (data && !error) {
+        orders = data;
+      }
+    } catch(e) {}
+  }
+
+  renderAdminTable();
+  updateStats();
+}
+
+function renderAdminTable() {
+  const tbody = document.getElementById('orders-tbody');
+
+  if (orders.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:rgba(255,255,255,0.3);padding:32px;font-size:12px;">Aucune commande pour le moment</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = '';
+  orders.forEach(order => {
+    const step = order.delivery_step || 0;
+    const stepInfo = DELIVERY_STEPS[step];
+    const time = new Date(order.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><span class="order-id">${order.id}</span></td>
+      <td>${order.product || 'Œuf en Chocolat'}</td>
+      <td style="font-size:11px;color:rgba(255,255,255,0.4)">${time}</td>
+      <td>
+        <span class="step-badge step-${step}">
+          ${stepInfo.icon} Étape ${step + 1} · ${stepInfo.title}
+        </span>
+      </td>
+      <td>
+        <select class="step-selector" id="sel-${order.id}" onchange="">
+          ${DELIVERY_STEPS.map((s, i) => `<option value="${i}" ${i === step ? 'selected' : ''}>${s.icon} Étape ${i+1} · ${s.title}</option>`).join('')}
+        </select>
+      </td>
+      <td>
+        <button class="save-btn" onclick="updateOrderStep('${order.id}')">Sauvegarder</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function updateStats() {
+  const total = orders.length;
+  const delivered = orders.filter(o => (o.delivery_step || 0) === 5).length;
+  const transit = orders.filter(o => (o.delivery_step || 0) >= 2 && (o.delivery_step || 0) < 5).length;
+
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-delivered').textContent = delivered;
+  document.getElementById('stat-transit').textContent = transit;
+}
+
+// ═══════════════════════════════════════════
+//  ADMIN — METTRE À JOUR L'ÉTAPE
+// ═══════════════════════════════════════════
+async function updateOrderStep(orderId) {
+  const sel = document.getElementById('sel-' + orderId);
+  const newStep = parseInt(sel.value);
+
+  // Mettre à jour local
+  const order = orders.find(o => o.id === orderId);
+  if (order) order.delivery_step = newStep;
+
+  // Mettre à jour Supabase
+  if (supabaseConnected && supabaseClient) {
+    try {
+      const { error } = await supabaseClient
+        .from('orders')
+        .update({ delivery_step: newStep })
+        .eq('id', orderId);
+
+      if (error) {
+        showNotif('⚠ Erreur Supabase : ' + error.message);
+      } else {
+        showNotif('✓ Étape mise à jour · ' + DELIVERY_STEPS[newStep].title);
+      }
+    } catch(e) {
+      showNotif('✓ Mis à jour localement (mode démo)');
+    }
+  } else {
+    // Mode démo sans vraie DB
+    showNotif('✓ Mis à jour · ' + DELIVERY_STEPS[newStep].title + ' (mode démo)');
+
+    // Simuler la mise à jour en temps réel sur la vue livraison
+    if (orderId === currentOrderId && document.getElementById('view-delivery').classList.contains('active')) {
+      renderDeliverySteps(newStep);
+    }
+  }
+
+  renderAdminTable();
+  updateStats();
+}
+
+// ═══════════════════════════════════════════
+//  ADMIN — SUPABASE STATUS UI
+// ═══════════════════════════════════════════
+function updateSupabaseStatusUI() {
+  const pill = document.getElementById('sb-status');
+  if (!supabaseConnected) {
+    pill.textContent = 'MODE DÉMO';
+    pill.className = 'sb-pill disconnected';
+  }
+}
+
+// ═══════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════
+initSupabase();
+updateSupabaseStatusUI();
+</script>
+</body>
+</html>
